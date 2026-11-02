@@ -1,0 +1,12 @@
+{
+    "name":  "brume-sylve",
+    "displayName":  "Brume Sylve",
+    "theme":  "ui",
+    "main":  "./lib/main",
+    "version":  "2.4.0",
+    "description":  "Forest green, warm ivory and muted gold. A color-only Brume variant.",
+    "license":  "MIT",
+    "engines":  {
+                    "mailspring":  "*"
+                }
+}

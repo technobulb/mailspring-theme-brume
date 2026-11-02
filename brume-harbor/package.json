@@ -1,0 +1,12 @@
+{
+    "name":  "brume-harbor",
+    "displayName":  "Brume Harbor",
+    "theme":  "ui",
+    "main":  "./lib/main",
+    "version":  "2.4.0",
+    "description":  "Navy navigation, cool white surfaces and soft blue accents. A color-only Brume variant.",
+    "license":  "MIT",
+    "engines":  {
+                    "mailspring":  "*"
+                }
+}

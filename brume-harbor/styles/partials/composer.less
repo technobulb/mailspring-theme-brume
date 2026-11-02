@@ -1,0 +1,420 @@
+// Composeur : fenêtre "New Message" et réponses intégrées au fil.
+//
+// Lecture Liquid Glass :
+// - en-tête calme : libellés discrets, filets à peine visibles, aucun cadre ;
+// - barre de mise en forme en "plateau" arrondi plutôt qu'entre deux traits ;
+// - barre d'actions en capsule flottante en bas, comme les barres d'outils de macOS 26 ;
+// - rayons concentriques : plateau 14pt, boutons 10pt (4pt de marge), sur l'échelle
+//   de rayons du thème.
+
+@brume-tray: @brume-fill-opaque; // plateaux opaques : barre d'actions, expéditeur
+@brume-toolbar-bubble: fade(@brume-paper, 95%); // bulle de mise en forme
+@brume-tray-hover: @brume-fill;
+@brume-tray-radius: @brume-radius-l;
+@brume-tray-inset: 4px; // 14 - 4 = 10 : @brume-radius-m pour les boutons
+@brume-label: @brume-icon; // libellés "To:", "From:" : 3,6:1, lisible sans crier
+
+//============================== Fenêtre ==============================//
+
+// Barre de titre du composeur : même blanc que le contenu, sans filet.
+body.window-type-composer {
+  .sheet-toolbar-container,
+  &.is-blurred .sheet-toolbar-container {
+    background: @brume-paper;
+  }
+  .sheet-toolbar .window-title {
+    font-size: @font-size-small;
+    color: @text-color-subtle;
+  }
+}
+
+//============================== En-tête ==============================//
+
+.composer-inner-wrap {
+  .composer-field-label {
+    color: @brume-label;
+  }
+
+  // Filets entre les champs : présents mais quasi invisibles.
+  .composer-participant-field:after,
+  .composer-subject:after {
+    background: @brume-hairline;
+  }
+
+  // Cc, Bcc, Reply-To : liens discrets.
+  .composer-header-actions .action {
+    color: @brume-label;
+    transition: color 120ms ease-out;
+    img.content-mask {
+      background-color: @brume-label;
+    }
+    &:hover {
+      color: @accent-primary;
+      img.content-mask {
+        background-color: @accent-primary;
+      }
+    }
+  }
+
+  // Objet : un peu plus présent que le reste de l'en-tête.
+  .composer-subject input {
+    font-weight: @font-weight-medium;
+    &::-webkit-input-placeholder {
+      color: @brume-label;
+      font-weight: @font-weight-normal;
+    }
+  }
+}
+
+// Expéditeur : capsule teintée au lieu d'une boîte encadrée.
+.composer-participant-field .button-dropdown {
+  .primary-item,
+  .only-item {
+    background: @brume-tray;
+    box-shadow: none;
+    border: 0;
+    border-radius: @brume-capsule;
+    padding: 0 12px;
+    transition: background 120ms ease-out;
+    &:hover {
+      background: @brume-fill-opaque-strong;
+    }
+  }
+  .primary-item {
+    border-radius: @brume-capsule 0 0 @brume-capsule;
+  }
+  .secondary-picker {
+    background: @brume-tray;
+    box-shadow: none;
+    border: 0;
+    border-left: 1px solid @brume-hairline;
+  }
+  img {
+    background-color: @text-color-subtle;
+  }
+  // La base remet des coins carrés au survol : on garde la capsule.
+  &:hover {
+    .primary-item,
+    .only-item {
+      border-radius: @brume-capsule;
+    }
+    .primary-item {
+      border-radius: @brume-capsule 0 0 @brume-capsule;
+    }
+  }
+}
+
+//======================== Barre de mise en forme =====================//
+
+// Le plateau épouse ses boutons et se centre dans la colonne du composeur, au lieu de
+// s'étirer sur toute la largeur avec les boutons tassés à gauche.
+//
+// Barre toujours visible au défilement : Mailspring la fait suivre en JavaScript
+// (position absolue recalculée à chaque événement "scroll"). Ces événements arrivent
+// après l'affichage de l'image défilée : la barre part avec le texte puis revient,
+// d'où le sautillement. On confie le suivi au moteur de rendu (position: sticky), et
+// on neutralise les valeurs posées par le script (styles en ligne, d'où !important).
+// Le collant est borné par le corps du message (.RichEditor-root), comme le calcul
+// d'origine : la barre ne déborde jamais sous l'en-tête ni sous la barre d'actions.
+@brume-toolbar-btn: 28px; // 36 - 2 x 4 : plateau de 36pt, boutons concentriques
+
+.RichEditor-root .RichEditor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+
+  .floating-container {
+    position: relative !important;
+    top: 0 !important;
+  }
+}
+
+// Menus de l'en-tête (expéditeur "From", signature, suggestions de destinataires) : ils
+// s'ouvrent au même niveau que la barre de mise en forme, qui vient après dans la page
+// et passait donc dessus. L'en-tête ne prend le dessus que pendant qu'on s'en sert
+// (menu ouvert ou champ actif) : en permanence, il recouvrirait la barre collée en haut
+// quand il défile sous elle.
+.composer-header:focus-within {
+  position: relative;
+  z-index: 4;
+}
+.composer-header:has(.button-dropdown.open) {
+  position: relative;
+  z-index: 4;
+}
+
+.RichEditor-toolbar {
+  font-family: @font-family;
+  font-size: @font-size-small;
+
+  // Hauteur réservée dès le premier rendu (la barre n'apparaît qu'après 400ms) :
+  // le texte ne descend plus d'un cran à son arrivée.
+  .floating-container {
+    border-bottom: 0;
+    padding: 6px 0 4px;
+    background: transparent;
+    min-height: 6px + @brume-toolbar-btn + 2 * @brume-tray-inset + 4px;
+  }
+
+  .inner {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    justify-content: center;
+    border-radius: @brume-tray-radius;
+    padding: @brume-tray-inset;
+    gap: 2px;
+    // Bulle flottante : verre presque couvrant (le texte qui défile dessous ne doit
+    // pas gêner la lecture des boutons), reflet sur l'arête haute, ombre portée.
+    // Le flou s'ajoute là où le moteur l'applique ; sans lui, la bulle reste lisible.
+    .brume-glass();
+    background-color: @brume-toolbar-bubble;
+    box-shadow: @brume-glass-edge, 0 6px 18px -8px fade(@brume-ink, 22%), 0 1px 3px fade(@brume-ink, 6%);
+  }
+
+  // Boutons du plateau seulement : les menus déroulants (lien, couleur) contiennent
+  // aussi des boutons, qui gardent leur forme.
+  .inner > button,
+  .inner > .link-picker > button {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: @brume-toolbar-btn;
+    min-width: @brume-toolbar-btn;
+    max-width: none;
+    padding: 0 6px;
+  }
+  .inner > button.with-select {
+    padding: 0 4px 0 8px;
+    gap: 2px;
+  }
+
+  button {
+    border-radius: @brume-tray-radius - @brume-tray-inset;
+    color: @brume-icon;
+    transition: background 120ms ease-out, color 120ms ease-out;
+    &:hover {
+      background: @brume-tray-hover;
+      color: @brume-ink;
+    }
+    &.with-select select {
+      font-family: @font-family;
+      font-size: @font-size-small;
+      color: inherit;
+    }
+  }
+
+  button.active {
+    background: @brume-accent-soft;
+    color: @accent-primary;
+  }
+
+  .divider {
+    height: 16px;
+    border-right-color: @brume-hairline-strong;
+    margin: 0 4px;
+    padding-right: 0;
+  }
+
+  // Couleur du texte : pastille ronde au lieu d'un rectangle cerclé de noir.
+  .color-picker > button {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin: 0 6px 1px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0.5px @brume-control-border, 0 0 0 2.5px @brume-tray,
+      0 0 0 3px @brume-hairline-strong;
+  }
+
+  // Menus déroulants de la barre (lien, couleur) : verre, comme les autres calques.
+  .dropdown {
+    border-radius: @brume-radius-l;
+    background-color: @brume-glass-fill;
+    -webkit-backdrop-filter: @brume-glass-blur;
+    backdrop-filter: @brume-glass-blur;
+    box-shadow: @brume-glass-edge, @brume-glass-shadow;
+  }
+}
+
+// Le composeur intégré au fil force le fond du plateau : on garde le nôtre.
+#message-list .message-item-wrap .message-item-white-wrap.composer-outer-wrap {
+  .RichEditor-toolbar .inner,
+  &.focused .RichEditor-toolbar .inner {
+    background-color: @brume-toolbar-bubble;
+  }
+}
+
+//========================== Barre d'actions ==========================//
+// La barre devient une capsule flottante posée sur le blanc du composeur.
+
+.composer-inner-wrap .composer-action-bar-wrap,
+.composer-full-window .composer-inner-wrap .composer-action-bar-wrap,
+#message-list .message-item-wrap .message-item-white-wrap.composer-outer-wrap .composer-action-bar-wrap,
+#message-list .message-item-wrap .message-item-white-wrap.composer-outer-wrap.focused .composer-action-bar-wrap {
+  background: transparent;
+  border-top: 0;
+  box-shadow: none;
+  padding: 6px 12px 12px;
+
+  // Cache animé qui masque les plugins pendant leur chargement : doit épouser la capsule.
+  .action-bar-cover {
+    background-image: linear-gradient(to right, fade(@brume-tray, 0%) 0%, @brume-tray 10%);
+  }
+}
+
+.composer-inner-wrap .composer-action-bar-content,
+.composer-full-window .composer-inner-wrap .composer-action-bar-content {
+  align-items: center;
+  gap: 2px; // les pastilles des options activées ne se touchent plus
+  padding: 6px;
+  background: @brume-tray;
+  border-radius: @brume-capsule;
+  box-shadow: inset 0 0 0 0.5px @brume-hairline;
+}
+.composer-inner-wrap .composer-action-bar-plugins {
+  align-items: center;
+  gap: 2px;
+}
+
+.composer-inner-wrap .composer-action-bar-wrap {
+  // Centrage par flexbox : avec la hauteur de ligne, les icônes (images en ligne) se
+  // posaient sur la ligne de base du texte, 1,5pt trop bas.
+  .btn.btn-toolbar:not(.btn-emphasis) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    line-height: 32px;
+    min-width: 32px;
+    padding: 0 8px;
+    border-radius: @brume-capsule;
+    transition: background 120ms ease-out;
+
+    img.content-mask {
+      background-color: @brume-icon;
+    }
+    &:hover {
+      background: @brume-tray-hover;
+      img.content-mask {
+        background-color: @brume-ink;
+      }
+    }
+    // Option activée (suivi d'ouverture, de clics...) : pastille d'accent.
+    &.btn-enabled {
+      background: @brume-accent-soft;
+      img.content-mask {
+        background-color: @accent-primary;
+      }
+    }
+  }
+
+  // Boutons à icône seule (suivi d'ouverture, de clics, grammaire, pièce jointe,
+  // corbeille) : ronds de 32pt, comme les pastilles d'option activée.
+  // Une seule icône, éventuellement précédée de la pastille d'alerte de quota (div en
+  // position absolue) : au plus deux enfants, le dernier étant l'icône.
+  .btn.btn-toolbar:not(.btn-emphasis):has(> img.content-mask:last-child):not(:has(> * + * + *)):not(:has(> img + img)) {
+    width: 32px;
+    padding: 0;
+  }
+  .btn.btn-toolbar:not(.btn-emphasis):has(> .grammar-check-icon-wrap:last-child):not(:has(> * + * + *)) {
+    width: 32px;
+    padding: 0;
+  }
+  // Pastille d'alerte de quota : avec le centrage flex, sa position par défaut tombait sur
+  // l'icône. Ancrée en haut à droite de l'icône, comme dans la base.
+  .btn.btn-toolbar:not(.btn-emphasis) > div[style*='absolute'] {
+    top: 0;
+    left: 50%;
+  }
+
+  // Envoyer : capsule pleine hauteur, alignée sur les autres boutons.
+  .btn-send {
+    margin-right: 8px;
+    .primary-item,
+    .secondary-picker,
+    .only-item {
+      height: 32px;
+      line-height: 32px;
+    }
+    .primary-item {
+      padding: 0 16px 0 14px;
+    }
+    .secondary-picker {
+      padding: 0 10px 0 8px;
+    }
+    // Icônes du bouton seulement : le menu des variantes d'envoi (Envoyer et archiver...)
+    // est dans le même élément, ses icônes passaient en blanc sur le verre blanc.
+    .primary-item img.content-mask,
+    .secondary-picker img.content-mask {
+      background-color: @btn-emphasis-text-color;
+    }
+    .secondary-items img.content-mask {
+      background-color: @brume-icon;
+    }
+  }
+}
+
+//=========================== Glisser-déposer =========================//
+
+.composer-inner-wrap .composer-drop-cover {
+  background: fade(@brume-paper, 85%);
+  border: 2px dashed color-mix(in oklab, @brume-accent-var 45%, transparent);
+  border-radius: @brume-radius-l;
+  .centered {
+    color: @accent-primary;
+    img {
+      background-color: @accent-primary;
+    }
+  }
+}
+
+//======================== Réponse intégrée au fil ====================//
+// La base teinte en crème le composeur non focalisé et ajoute une lueur d'accent au
+// focus : on garde la carte blanche du thème, et un anneau d'accent doux au focus.
+#message-list .message-item-wrap .message-item-white-wrap.composer-outer-wrap {
+  background: @brume-paper;
+  .show-more-fade {
+    background: linear-gradient(to right, fade(@brume-paper, 0%) 0%, @brume-paper 40%);
+  }
+  .signature-button-dropdown .only-item {
+    background: transparent;
+  }
+  // La base retire la marge droite de la corbeille dans le fil : l'icône se décalait
+  // à gauche de sa pastille de survol. Bouton rond centré, comme les autres icônes seules.
+  .composer-action-bar-wrap .btn.btn-toolbar.btn-trash {
+    width: 32px;
+    padding: 0;
+  }
+  &.focused {
+    background: @brume-paper;
+    box-shadow: @brume-card-shadow, 0 0 0 3px @brume-accent-ring;
+    .show-more-fade {
+      background: linear-gradient(to right, fade(@brume-paper, 0%) 0%, @brume-paper 40%);
+    }
+  }
+}
+
+//===================== Texte cité ======================================//
+// La base colore les citations en mêlant le texte à du violet pur (mauve hors palette).
+// Texte gris du thème et filet d'accent doux, comme une citation de Mail.
+.RichEditor-root blockquote,
+.RichEditor-root .uneditable blockquote {
+  border-left: 2px solid @brume-accent-ring;
+  color: @text-color-subtle;
+}
+
+// Keep the Send segments rounded on Windows, including hover states.
+.composer-inner-wrap .composer-action-bar-wrap .btn-send {
+  border-radius: @brume-capsule;
+  .primary-item, &:hover .primary-item {
+    border-radius: @brume-capsule 0 0 @brume-capsule !important;
+  }
+  .secondary-picker, &:hover .secondary-picker {
+    border-radius: 0 @brume-capsule @brume-capsule 0 !important;
+  }
+  .only-item, &:hover .only-item {
+    border-radius: @brume-capsule !important;
+  }
+}

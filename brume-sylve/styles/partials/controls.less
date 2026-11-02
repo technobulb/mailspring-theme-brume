@@ -1,0 +1,213 @@
+// Contrôles : capsules, aplats sans dégradé, anneau de focus pastel.
+// Les couleurs d'accent passent par var(--brume-accent) (@brume-accent-var) : elles
+// suivent l'accent du thème, ou celui de macOS si on l'active dans index.less.
+
+@brume-emphasis-bg: @brume-accent-var;
+@brume-emphasis-bg-hover: color-mix(in oklab, @brume-accent-var, white 8%);
+@brume-emphasis-bg-active: color-mix(in oklab, @brume-accent-var, black 8%);
+@brume-emphasis-rim: inset 0 1px 0 fade(#ffffff, 22%);
+
+// Boutons standards en capsule (macOS 26).
+.btn {
+  border-radius: @brume-capsule;
+}
+
+// Bouton principal : aplat d'accent, reflet léger en haut, plus de dégradé bleu.
+.btn.btn-emphasis {
+  background: @brume-emphasis-bg;
+  border: 0;
+  box-shadow: @brume-emphasis-rim, 0 1px 2px color-mix(in oklab, @brume-accent-var 30%, transparent);
+  &:before {
+    display: none;
+  }
+  &:hover {
+    background: @brume-emphasis-bg-hover;
+  }
+  &:active {
+    background: @brume-emphasis-bg-active;
+  }
+}
+
+.btn.btn-danger {
+  box-shadow: inset 0 1px 0 fade(#ffffff, 18%);
+}
+
+// Boutons à choix (Envoyer + flèche) : une capsule coupée en deux.
+.button-dropdown {
+  .primary-item {
+    border-radius: @brume-capsule 0 0 @brume-capsule;
+  }
+  .secondary-picker {
+    border-radius: 0 @brume-capsule @brume-capsule 0;
+  }
+  .only-item {
+    border-radius: @brume-capsule;
+  }
+  &.btn-emphasis {
+    .primary-item,
+    .secondary-picker,
+    .only-item {
+      background: @brume-emphasis-bg;
+      color: @btn-emphasis-text-color;
+      border: 0;
+      box-shadow: @brume-emphasis-rim;
+      &:before {
+        display: none;
+      }
+      &:hover {
+        background: @brume-emphasis-bg-hover;
+      }
+      &:active {
+        background: @brume-emphasis-bg-active;
+      }
+    }
+    .secondary-picker {
+      border-left: 1px solid fade(@btn-emphasis-text-color, 25%);
+    }
+  }
+}
+
+// Champs : anneau de focus de 3px, comme les contrôles natifs. Le contour
+// `:focus-visible` global de la base est retiré ici pour ne pas doubler l'anneau.
+textarea,
+input[type='text'],
+input[type='email'],
+input[type='number'],
+input[type='password'],
+input[type='search'],
+input[type='tel'],
+input[type='url'] {
+  &:focus {
+    border-color: @accent-primary;
+    box-shadow: 0 0 0 3px @brume-accent-ring;
+    outline: none;
+  }
+}
+
+// Navigation au clavier ailleurs : contour d'accent doux et décollé, au lieu du trait
+// plein de 2px.
+:focus-visible {
+  outline: 2px solid @brume-accent-ring;
+  outline-offset: 2px;
+}
+
+// Recherche de la liste des fils : lentille de verre. Bords alignés sur les pastilles de
+// survol et de sélection de la liste (8pt). Bordure de 1px en dégradé (lumière venue du
+// haut), corps teinté, lueur intérieure et ombre portée diffuse. Pas de flou : rien ne
+// défile sous la barre. La bordure est compensée dans le retrait : la loupe reste à 20pt
+// du bord de la colonne, au droit des cases à cocher.
+.toolbar-ThreadList .thread-search-bar {
+  margin-left: @brume-search-inset;
+  margin-right: @brume-search-inset;
+  padding-left: 11px;
+  padding-right: 11px;
+  border: 1px solid transparent;
+  background: @brume-search-body padding-box, @brume-search-rim border-box;
+  box-shadow: @brume-search-shadow;
+  transition: background 160ms ease-out, box-shadow 160ms ease-out;
+  &:hover {
+    box-shadow: @brume-search-shadow-hover;
+  }
+  &:focus-within {
+    background: linear-gradient(@brume-paper, @brume-paper) padding-box, @brume-search-focus-rim border-box;
+    box-shadow: @brume-search-focus-shadow;
+    img[src*='/searchloupe@'] {
+      background-color: @accent-primary;
+    }
+  }
+}
+// Fenêtre inactive : la matière reste, le relief disparaît (comme les capsules de la barre).
+body.is-blurred .toolbar-ThreadList .thread-search-bar {
+  box-shadow: none;
+}
+
+// Loupe et bouton d'effacement : images de Mailspring affichées telles quelles (loupe
+// pâle au tracé propre, disque gris d'un autre dessin). Remplacées par les pictogrammes
+// du thème, au gris des icônes. L'image d'origine est décalée hors de sa boîte, comme
+// pour les masques. Vaut pour toutes les recherches (liste, calendrier, contacts).
+img[src*='/searchloupe@'] {
+  object-position: 10000px;
+  background-color: @brume-icon;
+  .brume-mask(@brume-glyph-search);
+}
+img[src*='/searchclear@'] {
+  object-position: 10000px;
+  background-color: fade(@brume-ink, 48%); // 3:1 sur le champ (commande, WCAG 1.4.11)
+  .brume-mask(@brume-glyph-search-clear);
+  transition: background-color 120ms ease-out;
+  &:hover {
+    background-color: @brume-icon;
+  }
+}
+
+.thread-search-bar {
+  .search-accessory.search:not(.loading) {
+    width: 16px;
+    height: 16px;
+  }
+  .search-accessory.clear {
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+  }
+}
+// Recherche en cours (liste et calendrier) : roue fine du thème (comme "Checking for
+// mail") au lieu de l'animation GIF de Mailspring.
+.thread-search-bar,
+.event-search-bar {
+  .search-accessory.loading {
+    width: 14px;
+    height: 14px;
+    margin: 1px;
+    box-sizing: border-box;
+    object-position: 10000px;
+    border: 1.5px solid @brume-hairline-strong;
+    border-top-color: @accent-primary;
+    border-radius: 50%;
+    animation: brume-spin 0.8s linear infinite;
+  }
+}
+
+@brume-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='%231f2230' stroke-opacity='0.64' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3.8 5 6.8 8 3.8'/%3E%3C/svg%3E");
+
+// Listes déroulantes natives (<select>) : pastille arrondie remplie, chevron dessiné,
+// anneau de focus du thème. La base les laisse rectangulaires, cerclées d'un trait, et
+// le contour de focus suivait cet angle droit. Les listes de la barre de mise en forme
+// du composeur (police, taille) restent des boutons nus.
+select:not(.RichEditor-toolbar select) {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  padding: 0 28px 0 10px;
+  border: 0;
+  border-radius: @brume-radius-s;
+  background-color: @brume-paper;
+  background-image: @brume-select-chevron;
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px 10px;
+  box-shadow: @brume-capsule-edge;
+  color: @text-color;
+  font-family: @font-family;
+  line-height: 28px;
+  transition: box-shadow 120ms ease-out, background-color 120ms ease-out;
+
+  &:hover:not(:disabled) {
+    background-color: @brume-fill-opaque;
+  }
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1px color-mix(in oklab, @brume-accent-var 55%, transparent),
+      0 0 0 4px @brume-accent-ring;
+  }
+  &:disabled {
+    opacity: 0.5;
+  }
+  &[multiple] {
+    height: auto;
+    padding: 4px;
+    background-image: none;
+  }
+}
+

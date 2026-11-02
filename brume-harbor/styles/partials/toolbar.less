@@ -1,0 +1,213 @@
+// Barre d'outils : la base Mailspring dessine déjà des capsules façon macOS 26.
+// On leur donne une vraie matière de verre clair : remplissage blanc translucide,
+// reflet spéculaire en haut, contour d'un demi-pixel, ombre presque nulle.
+// Fenêtre inactive : la base aplatit les capsules, on ne touche pas à cet état.
+
+body.platform-darwin .sheet-toolbar {
+  .btn-toolbar {
+    background: fade(@brume-paper, 78%);
+    box-shadow: @brume-capsule-edge;
+    transition: background 140ms ease-out, box-shadow 140ms ease-out;
+
+    img.content-mask {
+      background-color: @text-color-subtle;
+    }
+    // Survol : un aplat légèrement plus sombre. L'ancien survol passait au blanc pur,
+    // invisible sur les colonnes blanches (liste des fils, barre de sélection
+    // multiple, toute la barre d'Ardoise).
+    &:hover {
+      background: @brume-fill-opaque-strong;
+      img.content-mask {
+        background-color: @brume-ink;
+      }
+    }
+    &:active {
+      background: @brume-fill-opaque-pressed;
+      box-shadow: 0 0 0 0.5px @brume-hairline-strong;
+    }
+  }
+
+  // Groupes : une seule capsule, segments séparés par un filet.
+  .button-group {
+    box-shadow: @brume-capsule-edge;
+    .btn.btn-toolbar {
+      box-shadow: none;
+      &:not(:first-child) {
+        border-left: 1px solid @brume-hairline;
+      }
+    }
+  }
+}
+
+// Fond de la barre d'outils : jeton @brume-toolbar-bg (la base y met la couleur des
+// panneaux), et la portion au-dessus de la barre latérale prend la couleur de celle-ci.
+body .sheet-toolbar-container,
+body.is-blurred .sheet-toolbar-container {
+  background: @brume-toolbar-bg;
+}
+.sheet-toolbar-container .toolbar-RootSidebar {
+  background: @brume-sidebar-bg;
+}
+
+// Bouton "Nouveau message" : seule capsule teintée de la barre, comme une action
+// principale ; placé en miroir des boutons de fenêtre (16pt du bord de la colonne).
+body.platform-darwin .sheet-toolbar .btn-toolbar.item-compose,
+body.platform-darwin.is-blurred .sheet-toolbar-container .btn.btn-toolbar.item-compose {
+  background: @brume-compose-bg;
+  box-shadow: @brume-compose-edge;
+  img.content-mask {
+    background-color: @brume-compose-icon;
+  }
+  &:hover {
+    background: @brume-compose-bg-hover;
+  }
+}
+body.platform-darwin .sheet-toolbar .toolbar-RootSidebar .btn-toolbar.item-compose {
+  margin-left: 0;
+  margin-right: @brume-sidebar-gutter;
+}
+
+// Indicateur d'activité (synchronisation), 12pt avant le bouton de composition.
+.toolbar-RootSidebar .toolbar-activity {
+  margin-right: 12px;
+  img.content-mask {
+    background-color: @brume-sidebar-icon;
+  }
+}
+
+// Boutons de fenêtre (fermer, réduire, plein écran).
+// La base les place avec une marge fixe depuis le haut : selon la hauteur de la barre
+// (46pt dans la fenêtre principale, moins dans les fenêtres secondaires), ils tombent
+// trop bas ou trop haut par rapport aux capsules. On les centre sur l'axe de la barre,
+// comme macOS, et on aligne la marge gauche sur la marge verticale (16pt dans la
+// fenêtre principale) pour un coin équilibré.
+@brume-gumdrop: 14px;
+@brume-gumdrop-gap: 4.5px; // marge propre à chaque bouton, définie par la base
+@brume-gumdrop-inset: ((@toolbar-height-darwin - @brume-gumdrop) / 2);
+
+body.platform-darwin {
+  .toolbar-window-controls {
+    align-self: center;
+    margin: 0 0 0 (@brume-gumdrop-inset - @brume-gumdrop-gap);
+  }
+
+  // Fenêtre inactive : couleur des pastilles lisible sur la barre latérale.
+  &.is-blurred .toolbar-RootSidebar .toolbar-window-controls button {
+    background-color: @brume-sidebar-gumdrop-blurred;
+    box-shadow: none;
+  }
+
+  // Le filet transparent sous la barre laissait voir un trait blanc : on le retire,
+  // la hauteur de la barre est fixée par ailleurs.
+  .sheet-toolbar {
+    border-bottom: 0;
+  }
+}
+
+.sheet-toolbar .window-title {
+  font-weight: @font-weight-semi-bold;
+  color: @brume-ink;
+}
+
+// Barre de sélection multiple (remplace la recherche quand plusieurs fils sont cochés) :
+// même blanc que la colonne, sans les filets verticaux de la base ; libellé discret.
+.sheet-toolbar .selection-bar .absolute {
+  border-left: 0;
+  border-right: 0;
+  background-color: @brume-paper;
+  .inner .centered {
+    color: @text-color-very-subtle;
+    font-size: @font-size-small;
+  }
+}
+
+// Message précédent / suivant : deux boutons nus dans la base, à côté de capsules.
+// Ici, une capsule coupée en deux, comme les groupes de boutons de la barre.
+// Géométrie imposée : selon la version de Mailspring, ces boutons nus héritent de la
+// hauteur de la barre (46pt) au lieu de celle des capsules (30pt).
+body.platform-darwin .sheet-toolbar .message-toolbar-arrow {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  box-sizing: border-box;
+  width: 36px;
+  min-width: 36px;
+  height: @toolbar-btn-height-darwin;
+  min-height: 0;
+  margin-top: ((@toolbar-height-darwin - @toolbar-btn-height-darwin) / 2);
+  padding: 0;
+  line-height: @toolbar-btn-height-darwin;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: fade(@brume-paper, 78%);
+  box-shadow: @brume-capsule-edge;
+  transition: background 140ms ease-out, opacity 140ms ease-out;
+
+  &.down {
+    margin-right: 0;
+    border-radius: @brume-capsule 0 0 @brume-capsule;
+  }
+  &.up {
+    margin-left: 0;
+    border-radius: 0 @brume-capsule @brume-capsule 0;
+  }
+  // Icône : l'image de Mailspring (épaisse, et différente selon les versions) est
+  // masquée ; chevron fin dessiné en masque à la place, même trait que les autres.
+  img {
+    display: none;
+  }
+  &::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background-color: @text-color-subtle;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    transition: background-color 140ms ease-out;
+  }
+  &.up::before {
+    transform: rotate(180deg);
+  }
+  &:not(.disabled):hover,
+  &:not(.disabled):focus-visible {
+    background: @brume-fill-opaque-strong;
+    &::before {
+      background-color: @brume-ink;
+    }
+  }
+  &:not(.disabled):active {
+    background: @brume-fill-opaque-pressed;
+  }
+  &.disabled {
+    opacity: 0.45;
+  }
+}
+// Filet entre les deux moitiés.
+body.platform-darwin .sheet-toolbar .message-toolbar-arrow.up {
+  box-shadow: @brume-capsule-edge, inset 1px 0 0 @brume-hairline;
+}
+
+// Bouton "relever le courrier" (lib/main.js) : capsule de la barre, icône en masque.
+// Au bout du ruban de la recherche (disposition liste), bord droit aligné sur les
+// pastilles de la liste, comme la recherche à gauche.
+.sheet-toolbar .btn-toolbar.brume-sync-now {
+  .brume-sync-now-icon {
+    display: block;
+    width: 16px;
+    height: 16px;
+    background-color: @text-color-subtle;
+    .brume-mask(@brume-glyph-refresh);
+    transition: background-color 140ms ease-out;
+  }
+  &:hover .brume-sync-now-icon {
+    background-color: @brume-ink;
+  }
+  &.spinning .brume-sync-now-icon {
+    animation: brume-spin 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+.toolbar-ThreadList .btn-toolbar.brume-sync-now {
+  margin-right: @brume-row-inset;
+}
+

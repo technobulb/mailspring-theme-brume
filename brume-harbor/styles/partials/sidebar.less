@@ -1,0 +1,491 @@
+// Barre latérale : surface "chrome" continue avec sa barre d'outils, collée au bord de
+// la fenêtre. Règles communes à Brume et Brume Ardoise : elles n'emploient que les
+// jetons @brume-sidebar-* (ui-variables.less), seuls redéfinis par une variante.
+//
+// Géométrie, depuis le bord de la fenêtre :
+//   16pt  colonne de départ : boutons de fenêtre, intitulés, triangles
+//    8pt  marge des pastilles ; 8pt de marge interne, d'où le départ à 16pt
+//   32pt  hauteur des lignes, texte à 14pt ; compteurs alignés à droite
+
+@brume-sidebar-pad: (@brume-sidebar-gutter - @brume-sidebar-pill-inset); // 8pt
+@brume-sidebar-glyph: 16px; // place du triangle, devant l'icône
+
+// Compteurs : la base leur impose 15px de haut ; avec une hauteur de ligne plus grande,
+// les chiffres débordaient vers le bas. Capsule en flex, hauteur de ligne de 1 : les
+// chiffres sont centrés optiquement, quelle que soit la taille.
+.brume-badge(@h: 18px) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: @h;
+  min-width: @h + 2px;
+  padding: 0 6px;
+  line-height: 1;
+  font-size: @font-size-smaller;
+  font-variant-numeric: tabular-nums;
+  border-radius: @brume-capsule;
+}
+
+//============================ Surfaces ================================//
+
+.column-RootSidebar,
+.account-sidebar,
+:where(.nav-rail-content) .account-sidebar {
+  background-color: @brume-sidebar-bg;
+}
+.account-sidebar {
+  position: relative;
+  color: @brume-sidebar-text;
+}
+
+// Activité de synchronisation ("Checking for mail", envois, détail par dossier).
+// Au lieu d'un bandeau collé en bas avec trois points clignotants : une carte posée
+// dans la barre latérale (marge des pastilles, 8pt), une roue de progression fine à
+// l'accent, et "Hide" en petite capsule (la base en fait un lien, à la couleur des
+// liens : corail profond, trop sombre sur l'ardoise).
+@brume-activity-spinner: 12px;
+
+@keyframes brume-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes brume-activity-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.brume-activity-line() {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: @font-weight-medium;
+
+  &::before {
+    content: '';
+    flex: 0 0 auto;
+    width: @brume-activity-spinner;
+    height: @brume-activity-spinner;
+    border-radius: 50%;
+    border: 1.5px solid @brume-sidebar-spinner-track;
+    border-top-color: @brume-sidebar-spinner;
+    animation: brume-spin 0.8s linear infinite;
+  }
+
+  // Les points de suspension animés font doublon avec la roue.
+  .ellipsis1,
+  .ellipsis2,
+  .ellipsis3 {
+    display: none;
+  }
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    margin-left: 4px;
+    padding: 0 8px !important; // la base pose un padding-left en style en ligne
+    border-radius: @brume-capsule;
+    background: @brume-sidebar-hover;
+    color: @brume-sidebar-text;
+    font-size: @font-size-smaller;
+    font-weight: @font-weight-medium;
+    text-decoration: none;
+    transition: background 120ms ease-out, color 120ms ease-out;
+    &:hover {
+      background: @brume-sidebar-selected-bg;
+      color: @brume-sidebar-strong;
+    }
+  }
+}
+
+// Indicateur "hors ligne" (sous la liste des dossiers) : la base lui donne les gris et la
+// couleur de lien des surfaces claires, illisibles sur l'ardoise. Pastille d'alerte,
+// libellé au ton de la barre, "Try now" en petite capsule comme "Hide".
+body .column-RootSidebar .offline-indicator {
+  margin: 0 @brume-sidebar-gutter 8px;
+  color: @brume-sidebar-text;
+  .offline-indicator-dot {
+    background-color: @brume-sidebar-warning;
+  }
+  .offline-indicator-retry {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: @brume-capsule;
+    background: @brume-sidebar-hover;
+    color: @brume-sidebar-text;
+    font-weight: @font-weight-medium;
+    transition: background 120ms ease-out, color 120ms ease-out;
+    &:hover {
+      background: @brume-sidebar-selected-bg;
+      color: @brume-sidebar-strong;
+    }
+  }
+}
+
+// Préfixe `body .column-RootSidebar` : priorité supérieure aux règles de Mailspring
+// (`.sidebar-activity`, `.sidebar-activity .item .inner`...), quel que soit l'ordre de
+// chargement des feuilles.
+body .column-RootSidebar .sidebar-activity,
+body .account-sidebar .sidebar-activity {
+  width: auto;
+  margin: 0 @brume-sidebar-pill-inset @brume-sidebar-pill-inset;
+  border-radius: @brume-radius-l;
+  background: @brume-sidebar-card-bg;
+  box-shadow: @brume-sidebar-card-edge;
+  color: @brume-sidebar-text;
+  overflow: hidden;
+
+  // Rien à afficher : pas de carte vide.
+  &:empty {
+    display: none;
+  }
+
+  // Blocs successifs (envois en cours, export, synchronisation) : un filet entre eux.
+  > * {
+    animation: brume-activity-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+    & + * {
+      border-top: 1px solid @brume-sidebar-hairline;
+    }
+  }
+
+  .item .inner {
+    border-bottom: 0;
+    padding: 9px 12px;
+  }
+
+  // Lignes de premier niveau (synchronisation, envois) : roue, libellé, compteur ou
+  // "Hide". L'export garde sa barre de progression sous le libellé : pas de roue.
+  // Deux règles distinctes : un sélecteur refusé dans une liste annule toute la liste,
+  // la ligne principale ne doit donc pas dépendre de :has().
+  > .item > .inner {
+    .brume-activity-line();
+  }
+  > div > .item > .inner:not(:has(div)) {
+    .brume-activity-line();
+  }
+
+  // Textes secondaires de la carte : couleur du texte courant, en plus petit. Le ton
+  // "intitulé" passe sur la barre, pas sur la carte d'Ardoise, un peu plus claire.
+  .item .count {
+    order: 2;
+    margin-left: auto;
+    color: @brume-sidebar-text;
+    font-weight: @font-weight-normal;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Détail par compte et par dossier.
+  .item .sync-activity {
+    max-height: 50vh;
+    overflow-y: auto;
+    border-top: 1px solid @brume-sidebar-hairline;
+
+    .account {
+      padding: 8px 12px 10px;
+      border-bottom: 0;
+      & + .account {
+        border-top: 1px solid @brume-sidebar-hairline;
+      }
+    }
+    h2 {
+      margin: 0 0 4px;
+      color: @brume-sidebar-strong;
+      font-size: @font-size-small;
+      font-weight: @font-weight-semi-bold;
+    }
+    .account .folder-progress {
+      margin: 2px 0;
+      color: @brume-sidebar-text;
+      .progress-label {
+        color: @brume-sidebar-text;
+        opacity: 1;
+      }
+    }
+  }
+}
+
+.column-RootSidebar .scrollbar-track {
+  .scrollbar-handle {
+    background-color: @brume-sidebar-scroll;
+  }
+  &:hover .scrollbar-handle,
+  &.dragging .scrollbar-handle {
+    background-color: @brume-sidebar-scroll-hover;
+  }
+}
+
+//============================ Contenu =================================//
+
+.outline-view {
+  margin-bottom: 4px;
+
+  section {
+    margin-bottom: 0;
+  }
+
+  // Intitulés de section, posés sur la colonne de départ.
+  .heading {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding: 10px @brume-sidebar-gutter 0;
+    margin: 0;
+    color: @brume-sidebar-heading;
+    font-size: @font-size-smaller;
+    line-height: 1;
+    font-weight: @font-weight-semi-bold;
+    letter-spacing: 0;
+    .add-item-button {
+      margin-right: 0;
+      img {
+        background: @brume-sidebar-heading;
+      }
+    }
+    .collapse-button {
+      color: @brume-sidebar-heading;
+      margin-right: 0;
+      min-width: 0;
+    }
+  }
+
+  // Lignes : une pastille par ligne. Le triangle est à l'intérieur de la pastille, sur
+  // la colonne de départ ; toutes les icônes s'alignent derrière lui, qu'il soit
+  // visible ou non.
+  .item-container {
+    position: relative;
+    margin: 1px @brume-sidebar-pill-inset;
+  }
+
+  .disclosure-triangle {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    left: @brume-sidebar-pad;
+    width: @brume-sidebar-glyph;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    div {
+      border-left-color: @brume-sidebar-heading;
+      border-top-width: 3.5px;
+      border-bottom-width: 3.5px;
+      border-left-width: 6px;
+      transform-origin: 3px 50%;
+    }
+  }
+
+  .item {
+    height: @brume-sidebar-row-height;
+    padding: 0 @brume-sidebar-pad 0 (@brume-sidebar-pad + @brume-sidebar-glyph);
+    border-radius: @brume-sidebar-pill-radius;
+    color: @brume-sidebar-text;
+    font-size: @font-size;
+    font-weight: @font-weight-normal;
+    transition: background-color 120ms ease-out;
+
+    img.content-mask {
+      background-color: @brume-sidebar-icon;
+    }
+    .icon {
+      padding-right: 8px;
+    }
+    .name {
+      flex: 0 1 auto;
+    }
+
+    // Compteurs : alignés à droite, en texte ; le compteur "plein" est une capsule.
+    .item-count-box {
+      .brume-badge();
+      margin-left: auto;
+      box-shadow: none;
+      background: transparent;
+      color: @brume-sidebar-count;
+      font-weight: @font-weight-medium;
+    }
+    .item-count-box.alt-count {
+      background: @brume-accent;
+      color: @brume-on-accent;
+    }
+
+    .item-action-button {
+      margin-left: 6px;
+      color: @brume-sidebar-heading;
+      &:hover {
+        color: @brume-sidebar-strong;
+        background: @brume-sidebar-hover;
+      }
+    }
+
+    &:hover:not(.selected) {
+      background-color: @brume-sidebar-hover;
+    }
+
+    &.selected {
+      background: @brume-sidebar-selected-bg;
+      box-shadow: inset 0 1px 0 @brume-sidebar-selected-rim;
+      color: @brume-sidebar-selected-text;
+      font-weight: @font-weight-medium;
+      img.content-mask {
+        background-color: @brume-sidebar-selected-icon;
+      }
+      .item-count-box {
+        color: @brume-sidebar-selected-count;
+      }
+      // Le compteur rempli garde son contraste sur la ligne sélectionnée
+      // (sans cette règle, le chiffre prenait la couleur de son propre fond).
+      .item-count-box.alt-count {
+        background: @brume-accent;
+        color: @brume-on-accent;
+      }
+    }
+
+    &.dropping {
+      background-color: @brume-sidebar-drop-bg;
+      color: @brume-sidebar-selected-text;
+    }
+
+    // Champ de renommage d'un dossier
+    &.editing .item-input {
+      background: @brume-sidebar-input-bg;
+      color: @brume-sidebar-strong;
+      border-color: @accent-primary;
+    }
+  }
+
+  // Sous-niveaux : la pastille garde toute sa largeur, seul le contenu se décale.
+  .item-children {
+    padding-left: 0;
+    .disclosure-triangle {
+      left: @brume-sidebar-pad + 14px;
+    }
+    .item {
+      padding-left: @brume-sidebar-pad + @brume-sidebar-glyph + 14px;
+    }
+    .item-children {
+      .disclosure-triangle {
+        left: @brume-sidebar-pad + 28px;
+      }
+      .item {
+        padding-left: @brume-sidebar-pad + @brume-sidebar-glyph + 28px;
+      }
+    }
+  }
+
+  .item-container.dropping {
+    background-color: transparent;
+    .item {
+      background-color: @brume-sidebar-drop-bg;
+      color: @brume-sidebar-selected-text;
+      img.content-mask {
+        background-color: @brume-sidebar-selected-icon;
+      }
+    }
+  }
+}
+
+// Sélecteur de compte : chevron dessiné en masque (l'image d'origine est opaque),
+// centré sur le premier intitulé.
+// Le chevron (10pt) est centré dans un disque de 22pt : bord droit du disque à 10pt du
+// bord, bord droit du chevron à 16pt, comme les compteurs et le bouton de composition.
+.account-sidebar .account-switcher {
+  top: 10px;
+  right: @brume-sidebar-gutter - 6px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  opacity: 1;
+  transition: background 120ms ease-out;
+  &:hover {
+    background: @brume-sidebar-hover;
+  }
+  img {
+    zoom: 1 !important;
+    width: 10px !important;
+    height: 6px !important;
+    transform: none;
+    object-position: 10000px;
+    background-color: @brume-sidebar-heading;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 10px 6px;
+    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M1 1l4 4 4-4"/></svg>');
+  }
+  &:hover img {
+    background-color: @brume-sidebar-strong;
+  }
+}
+
+//=========================== Rail de navigation ======================//
+// Calendrier, contacts... : même surface et même grammaire que la barre latérale.
+
+.nav-rail-frame,
+.sheet-container .sheet-toolbar ~ .nav-rail-frame,
+.sheet-toolbar:has(+ .nav-rail-frame) .sheet-toolbar-container {
+  background: @brume-sidebar-bg;
+}
+.nav-rail {
+  background-color: @brume-sidebar-bg;
+  .nav-rail-item {
+    border-radius: @brume-sidebar-pill-radius;
+    img.content-mask {
+      background-color: @brume-sidebar-icon;
+    }
+    &:hover {
+      background: @brume-sidebar-hover;
+    }
+    &.active {
+      background: @brume-sidebar-selected-bg;
+      box-shadow: inset 0 1px 0 @brume-sidebar-selected-rim;
+    }
+    &.active img.content-mask {
+      background-color: @brume-sidebar-selected-icon;
+    }
+  }
+  .nav-rail-section::before {
+    border-top-color: @brume-sidebar-hairline;
+  }
+}
+
+// Allow descenders room while retaining horizontal label truncation.
+.account-sidebar .outline-view .item {
+  font-size: @font-size + 1px;
+  display: flex;
+  align-items: center;
+}
+.account-sidebar .outline-view .item .name {
+  height: auto;
+  min-height: 22px;
+  line-height: 22px;
+  padding-bottom: 2px;
+  min-width: 0;
+}
+// Account headings need their own text metrics, separate from folder rows.
+.account-sidebar .outline-view .heading {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 36px;
+  padding-top: 6px;
+  padding-bottom: 4px;
+  font-size: @font-size;
+  line-height: 22px;
+  align-items: center;
+}
+.account-sidebar .outline-view .heading .name,
+.account-sidebar .outline-view .heading .text {
+  height: auto;
+  min-height: 22px;
+  line-height: 22px;
+  padding-bottom: 2px;
+}
