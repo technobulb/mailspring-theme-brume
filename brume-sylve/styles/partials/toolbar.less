@@ -51,8 +51,8 @@ body.is-blurred .sheet-toolbar-container {
 
 // Bouton "Nouveau message" : seule capsule teintée de la barre, comme une action
 // principale ; placé en miroir des boutons de fenêtre (16pt du bord de la colonne).
-body.platform-darwin .sheet-toolbar .btn-toolbar.item-compose,
-body.platform-darwin.is-blurred .sheet-toolbar-container .btn.btn-toolbar.item-compose {
+body .sheet-toolbar .btn-toolbar.item-compose,
+body.is-blurred .sheet-toolbar-container .btn.btn-toolbar.item-compose {
   background: @brume-compose-bg;
   box-shadow: @brume-compose-edge;
   img.content-mask {
@@ -211,3 +211,11 @@ body.platform-darwin .sheet-toolbar .message-toolbar-arrow.up {
   margin-right: @brume-row-inset;
 }
 
+// Compose stays legible on the dark sidebar in every interaction state.
+body .sheet-toolbar .btn-toolbar.item-compose img.content-mask,
+body .sheet-toolbar .btn-toolbar.item-compose:hover img.content-mask,
+body.is-blurred .sheet-toolbar-container .btn.btn-toolbar.item-compose img.content-mask {
+  background-color: @brume-compose-icon;
+  filter: none;
+  opacity: 1;
+}
